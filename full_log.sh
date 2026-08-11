@@ -5,7 +5,7 @@
 
 # Verifica si se ha pasado un argumento
 if [ $# -lt 2 ]; then
-    echo "Uso: $0 <día> <mes> [huso_horario (UTC o CLT)]"
+    echo "Uso: $0 <día> <mes> [huso_horario (UTC o CLT)] [entorno (test|prod)]"
     exit 1
 fi
 
@@ -13,6 +13,7 @@ fi
 nro=$1
 mes=$2
 tz=${3:-UTC}
+env=$4
 
 cp ../bin/archivosbase/* .
 
@@ -22,7 +23,7 @@ echo "concatena los archivos de log ..."
 python3 ../bin/concatena2.py
 
 echo "enriquece ..."
-python3 ../bin/enrich.py
+python3 ../bin/enrich.py $env
 
 ../bin/filtragpsoauth.sh
 

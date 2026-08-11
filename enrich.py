@@ -5,6 +5,7 @@
 #         -14 agrego un campo etapa a partir de un archivo excel etapasS.xls
 import numpy as py
 import pandas as pd
+import sys
 
 def convert_to_int64(value):
     try:
@@ -177,7 +178,15 @@ log['estado'] = (
 
 # agrego el campo etapa
 print("10. pongo las etapas del archivo de etapas")
-etapas = pd.read_excel("etapas.xls", dtype={"orden": "Int64"})
+env = sys.argv[1] if len(sys.argv) > 1 else None
+if env == 'test':
+    etapas_file = "etapas_test.xls"
+elif env == 'prod':
+    etapas_file = "etapas_prod.xls"
+else:
+    etapas_file = "etapas.xls"
+
+etapas = pd.read_excel(etapas_file, dtype={"orden": "Int64"})
 
 # intento descubrir que columna tiene el problema de tipo de datos (3-ago-26)
 columnas_join = ['log', 'apisola', 'status', 'deliveryType']
