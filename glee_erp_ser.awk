@@ -5,7 +5,9 @@
 # para correr este script primero se debe hacer 
 # chmod +x glee_erp_ser.awk
 #
-# awk -f glee_erp_ser.awk {archivo log} > erp_ser.csv      --- deja el resultado en erp_ser.csv
+# Opciones de hora:
+# awk -v tz=UTC -f glee_erp_ser.awk {archivo log} > erp_ser.csv      --- convierte UTC a CLT (default)
+# awk -v tz=CLT -f glee_erp_ser.awk {archivo log} > erp_ser.csv      --- no convierte la hora (CLT)
 #
 # en mi mac uso gawk y funciona
 # GNU Awk 5.3.1, API 4.0, PMA Avon 8-g1, (GNU MPFR 4.2.1, GNU MP 6.3.0)
@@ -14,20 +16,24 @@
 BEGIN { 
    print "log;fechahora;mseg;tipo;numero;tiponum;host;metodo;api;apisola;version;httpstatus;syncrotessDeliveryNumber;detail;orderNo;soldtoname;soldtonum;shiptoname;shiptonum;street;postcode;city;latitude;longitude;minQuantity;maxQuantity;dateTimeEarliestFirstLoadOnCustomerSite;dateTimeLatestFirstLoadOnCustomerSite;principalPlant;productId;deliveryType;deliveryQuantity;erpTicketNumber;truckId;truckName;truckType;parkingLocation;homeLocation;licensePlate;raw";
 }
-function utc_to_clt(fecha_in, hora_in,    f, h, str_utc, epoch, fecha_local, hora_local, mseg) {
+function format_time(fecha_in, hora_in,    f, h, str_utc, epoch, fecha_local, hora_local, mseg) {
     split(fecha_in, f, /[\/-]/);
     split(hora_in, h, /[:.]/);
     mseg = (length(h[4]) > 0) ? h[4] : "000";
 
-    ENVIRON["TZ"] = "UTC";
-    str_utc = sprintf("%04d %02d %02d %02d %02d %02d", f[1], f[2], f[3], h[1], h[2], h[3]);
-    epoch = mktime(str_utc);
+    if (tz == "CLT") {
+        return sprintf("%04d/%02d/%02d %02d:%02d:%02d;%s", f[1], f[2], f[3], h[1], h[2], h[3], mseg);
+    } else {
+        ENVIRON["TZ"] = "UTC";
+        str_utc = sprintf("%04d %02d %02d %02d %02d %02d", f[1], f[2], f[3], h[1], h[2], h[3]);
+        epoch = mktime(str_utc);
 
-    ENVIRON["TZ"] = "America/Santiago";
-    fecha_local = strftime("%Y/%m/%d", epoch);
-    hora_local  = strftime("%H:%M:%S", epoch);
+        ENVIRON["TZ"] = "America/Santiago";
+        fecha_local = strftime("%Y/%m/%d", epoch);
+        hora_local  = strftime("%H:%M:%S", epoch);
 
-    return fecha_local " " hora_local ";" mseg;
+        return fecha_local " " hora_local ";" mseg;
+    }
 }
 
 #
@@ -44,7 +50,7 @@ function utc_to_clt(fecha_in, hora_in,    f, h, str_utc, epoch, fecha_local, hor
     # en el mensaje 120 recupero las variables, y luego en el 125 veo si salió exitoso
     if ( match(linea, /120 ==/ )) {
         tiponum = 120;
-        fechahora = utc_to_clt($1, $2);
+        fechahora = format_time($1, $2);
         tipo = $8;
         numero = $10;
 
